@@ -15,3 +15,7 @@ This first approached was based on the ideea that clones generally have the same
 ## Final Results
 
 ## Scalability
+
+In Scala, we can easily improve scalability by using `lazy evaluation` in terms of LazyList. When working large amounts of data, we can avoid unnecessary computation and reduce memory usage.
+
+In this case, we would not want to hold a list with all of the parsed html files in memory. We would like to take a single file, process it, free any memory no longer needed, and then finally move on to the next file. By using a lazy list, we can achieve a similar behaviour while still writing the code in a nice, easy to read, `functional` style.

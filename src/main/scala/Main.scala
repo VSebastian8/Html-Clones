@@ -14,13 +14,12 @@ import net.ruippeixotog.scalascraper.model.Document
 // Group the sites by the length of their content
 // Write the groupings to the output file
 @main def group_clones(): Unit =
-  val tier = 2
+  val tier = 1
   println("Grouping clones for tier " + tier)
   val files = os.list(os.pwd / "input" / ("tier" + tier))
   // Parse the HTML in each file
   val browser: Browser = JsoupBrowser()
-  val docs =
-    files
+  val docs = LazyList.from(files)
       .map(_.toString())
       .map((s: String) => (s.split("/").last, browser.parseFile(s)))
   val groups = group_content_lengths(docs, 15)
@@ -30,37 +29,31 @@ import net.ruippeixotog.scalascraper.model.Document
 // Calculate the total length of the content per page
 // Group the pages by this length (within a procentage)
 def group_content_lengths(
-    docs: IndexedSeq[(String, Document)],
+    docs: LazyList[(String, Document)],
     distance: Int
 ): List[(Int, List[String])] =
   // Tags that contain relevant content
   val content_tags =
     List("p", "a", "h1", "h2", "h3", "h4", "h5", "h6", "li", "span", "div")
 
-  val contents_length =
+  val docs_content_lengths: LazyList[(String, Int)] =
     docs.map((name, doc) =>
       (name, content_tags.map(doc >> allText(_)).map(_.length()).sum())
     )
 
   // list of (content_length, grouped_sites)
   var groups = List[(Int, List[String])]()
-  contents_length
+  docs_content_lengths
     .sorted(Ordering.by(_(1)))
     .foreach((name: String, length: Int) => {
-      // Either add the site to a list (if its length is close to another group) or initialize a new group with that site
-      var done: Boolean = false
-      groups = groups.map((target, group) =>
-        if (
-          length > target - (target / distance) - 1 && length < target + (target / distance) + 1
-        ) {
-          if (!done) {
-            done = true; 
-            (length, group :+ name)
-          } else { (target, group) }
-        } else { (target, group) }
-      )
-      if (!done) { groups = groups :+ (length, List(name)) }
-    })
+      // Either add the page to the beginning of the list or initialize a new group with that page 
+      // Since the content list is sorted, the page is either in the correct range for the first group or it starts a new group
+      groups = groups match {
+        case (target, group) :: rest if
+          length < target + (target / distance) + 10
+          => (length, name :: group) :: rest 
+        case _ => (length, List(name)) :: groups 
+      }})
   groups
 
   // Write to the output file
