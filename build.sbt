@@ -8,5 +8,7 @@ lazy val root = project
     scalaVersion := scala3Version,
     libraryDependencies += "org.scalameta" %% "munit" % "1.0.0" % Test,
     libraryDependencies += "org.scala-lang" %% "toolkit" % "0.7.0",
-    libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "3.1.2"
+    libraryDependencies += "net.ruippeixotog" %% "scala-scraper" % "3.1.2",
+    libraryDependencies += "org.seleniumhq.selenium" % "selenium-java" % "3.14.0",
+    libraryDependencies += "commons-io" % "commons-io" % "2.6"
   )
