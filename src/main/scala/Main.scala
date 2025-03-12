@@ -71,12 +71,21 @@ def clusteringAlgorithm(tier: Int): Unit =
   println(s"${RED}Grouping clones for tier $tier ${RESET}")
   // Read the files
   val files = readFiles(tier)
+  val timeBeforeCluster = System.nanoTime;
   // Clustering algorithm
   val groups = contentLengthClustering(files)
+  val timeAfterCluster = System.nanoTime;
+  // Time for clustering algorithm in milliseconds
+  val clusterTime = (timeAfterCluster - timeBeforeCluster) / 1_000_000
+  println(s"[$GREEN$clusterTime ms$RESET]")
   // Write to output
   writeGroups(os.pwd / "output" / "txt" / ("tier" + tier + ".txt"), groups)
+  val timeBeforeScreenshot = System.nanoTime;
   // Take screenshots for output
   pageScreenshots(groups, tier)
+  val timeAfterScreenshot = System.nanoTime;
+  val screenshotTime = (timeAfterScreenshot - timeBeforeScreenshot) / 1_000_000
+  println(s"[$GREEN$screenshotTime ms$RESET]")
 
 // Read from the specified subdirectory
 def readFiles(tier: Int): IndexedSeq[Path] =
