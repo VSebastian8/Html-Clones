@@ -8,7 +8,7 @@ Design an algorithm that will group together HTML documents which are similar fr
 
 This first approach was based on the ideea that clones generally have the same content, with minimal modifications. With the use of a `HTML Parsing` library, the algorithm extracts the text content from relevant tags (<a\>, <p\>, <h1\>, and so on). Then we simply calculate the length of this content for each page and group pages with simillar content lengths (where their difference is less than 15%).
 
-## Vizualization
+## Visualization
 
 Opening each html page by hand can get really inefficient really fast. Therefore, I decided to write some code that takes a screenshot of each website and saves it in its respective group folder. For this I used a library called `Selenium` which creates a web browser, runs the html in this browser, and finally takes a screenshot of the page.
 
@@ -16,7 +16,7 @@ Opening each html page by hand can get really inefficient really fast. Therefore
 | :-----------------------------------------------------: |
 |     _Selenium screenshot of one of the html pages_      |
 
-Some pages have a \<script\> tag that prevents the site from loading (e.g. a while loop that refreshes the window). In such cases, the user would not be able to view the site either, so the visualization algorithm skips any page doesn't load in a specified amount of time.
+Some pages have a \<script\> tag that prevents the site from loading (e.g. a while loop that refreshes the window). In such cases, the user would not be able to view the site either, so the visualization algorithm skips any page that doesn't load in a specified amount of time.
 
 |     ![Gif generated from demo.mp4](./assets/timeout.png)      |
 | :-----------------------------------------------------------: |
@@ -35,7 +35,7 @@ With that being said, the algorithm does a decent job at grouping the html clone
 | :--------------------------------------------------------: |
 |            _Screenshots for one of the groups_             |
 
-## Screenshot Convolution
+## Image Similarity
 
 ## Final Results
 
