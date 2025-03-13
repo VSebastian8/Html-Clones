@@ -18,6 +18,9 @@ import scala.concurrent.{Await, Future, ExecutionContext}
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.util.concurrent.{LinkedBlockingQueue, Executors, TimeUnit}
 import scala.concurrent.duration._
+import java.io.ByteArrayInputStream
+import javax.imageio.ImageIO
+import scalaz.Maybe.Just
 
 object SeleniumService:
   // Thread pool
@@ -82,7 +85,7 @@ object SeleniumService:
     driver
 
   // Take screenshots of each page in each group
-  def pageScreenshots(
+  def visualize(
       groups: List[List[Path]],
       tier: Int,
       outputDir: String
@@ -143,3 +146,56 @@ object SeleniumService:
         println(s"Error processing $url.")
     }
   }
+
+  // Capture each html page as a matrix of pixels, or hold its path if it times out
+  def capture(
+      group: List[Path]
+  ): (List[(Path, List[List[(Int, Int, Int)]])], List[Path]) =
+    val driver = driverQueue.take()
+    val result = group
+      .map((path: Path) => {
+        (path, captureScreenshot(driver, path))
+      })
+    // Return the WebDriver to the queue for reuse
+    driverQueue.put(driver)
+    (
+      result.collect { case (path, Some(matrix)) => (path, matrix) },
+      result.collect { case (path, None) => path }
+    )
+
+  // Return the screenshot of the html page as a matrix of pixels
+  def captureScreenshot(
+      driver: FirefoxDriver,
+      url: Path
+  ): Option[List[List[(Int, Int, Int)]]] =
+    try {
+      // Navigate to the URL
+      driver.get(s"file://$url")
+      // Wait for a maximum of 1 second
+      val wait = new WebDriverWait(driver, 1)
+      wait.until(
+        ExpectedConditions.presenceOfElementLocated(
+          By.tagName("body")
+        )
+      )
+      // Take the screenshot and save it
+      val screenshot = driver.getScreenshotAs(OutputType.BYTES)
+
+      // Convert bytes to BufferedImage
+      val inputStream = new ByteArrayInputStream(screenshot)
+      val image = ImageIO.read(inputStream)
+      val width = 1800
+      val height = 900
+
+      // Extract RGB pixels
+      val matrix = (0 until height).map { y =>
+        (0 until width).map { x =>
+          val rgb = image.getRGB(x, y)
+          val red = (rgb >> 16) & 0xff
+          val green = (rgb >> 8) & 0xff
+          val blue = rgb & 0xff
+          (red, green, blue)
+        }.toList
+      }.toList
+      Some(matrix)
+    } catch { case _ => None }

@@ -33,7 +33,7 @@ object ClusteringAlgorithm:
     )
     // Take screenshots for output
     timed {
-      SeleniumService.pageScreenshots(
+      SeleniumService.visualize(
         groups,
         tier,
         "./output/solution1/screenshots"
@@ -55,9 +55,7 @@ object ClusteringAlgorithm:
     // Parse the HTML for each page in each group, then calculate the length of the content
     val listFutures = splitFiles.map(group =>
       Future {
-
-        // Extract the content from each html page
-        // Calculate the total length of the content per page
+        // Extract the content from each html page and calculate its length
         LazyList
           .from(group)
           .map((p: Path) => (p, p.toString |> browser.parseFile))
