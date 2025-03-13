@@ -43,18 +43,20 @@ object ScreenshotSimilarity:
     )
 
     // Parse the HTML for each page in each group, then calculate the length of the content
-    val listFutures = splitFiles.map(group =>
-      Future {
-        // Extract the content from each html page and calculate its length
-        val (images, timedOut) = SeleniumService.capture(List.from(group))
-        (
-          images.map { case (path, image) =>
-            (path, colorAverage(image))
-          },
-          timedOut
-        )
-      }
-    )
+    val listFutures = LazyList
+      .from(splitFiles)
+      .map(group =>
+        Future {
+          // Extract the content from each html page and calculate its length
+          val (images, timedOut) = SeleniumService.capture(LazyList.from(group))
+          (
+            images.map { case (path, image) =>
+              (path, colorAverage(image))
+            },
+            timedOut
+          )
+        }
+      )
     // Await the futures
     Await.result(
       Future
@@ -66,7 +68,7 @@ object ScreenshotSimilarity:
           }
         }
         .map { case (images, timedOut) =>
-          timedOut :: (groupByColor(images))
+          timedOut.toList :: (groupByColor(images))
         },
       Duration.Inf
     )
@@ -100,6 +102,60 @@ object ScreenshotSimilarity:
       .toList
     simplifiedMat.flatten()
 
+  // Mean Squared Error for two images
+  def imageComparison(
+      image1: List[(Int, Int, Int)],
+      image2: List[(Int, Int, Int)]
+  ): Int =
+    image1.zip(image2).foldRight(0) {
+      case (((a1, b1, c1), (a2, b2, c2)), acc) => {
+        acc
+          + (a1 - a2) * (a1 - a2)
+          + (b1 - b2) * (b1 - b2)
+          + (c1 - c2) * (c1 - c2)
+      }
+    }
+
+  def averageImage(
+      image: List[(Int, Int, Int)],
+      previousAvg: List[(Int, Int, Int)],
+      n: Int
+  ): List[(Int, Int, Int)] =
+    image.zip(previousAvg).map { case ((a1, b1, c1), (a2, b2, c2)) =>
+      (
+        a1 / n + a2 * (n - 1) / n,
+        b1 / n + b2 * (n - 1) / n,
+        c1 / n + c2 * (n - 1) / n
+      )
+    }
+
+  // Compare the mean squared error of two images with the acceptable margin
   def groupByColor(
-      pages: List[(Path, List[(Int, Int, Int)])]
-  ): List[List[Path]] = ???
+      pages: LazyList[(Path, List[(Int, Int, Int)])]
+  ): List[List[Path]] =
+    // Holds the average image and the images that make it up
+    var groups = List[(List[(Int, Int, Int)], List[Path])]()
+    pages.foreach {
+      case (path, image) => {
+        var done = false
+        groups = groups.map {
+          case (avgImage, paths) => {
+            if (done == false) {
+              val mse = imageComparison(image, avgImage) / (190 * 90)
+              if (mse < config.imageDistance) {
+                done = true
+                (averageImage(image, avgImage, paths.length + 1), path :: paths)
+              } else {
+                (avgImage, paths)
+              }
+            } else {
+              (avgImage, paths)
+            }
+          }
+        }
+        if (done == false) {
+          groups = (image, List(path)) :: groups
+        }
+      }
+    }
+    groups.map((_, paths) => paths)

@@ -149,8 +149,8 @@ object SeleniumService:
 
   // Capture each html page as a matrix of pixels, or hold its path if it times out
   def capture(
-      group: List[Path]
-  ): (List[(Path, List[List[(Int, Int, Int)]])], List[Path]) =
+      group: LazyList[Path]
+  ): (LazyList[(Path, List[List[(Int, Int, Int)]])], LazyList[Path]) =
     val driver = driverQueue.take()
     val result = group
       .map((path: Path) => {

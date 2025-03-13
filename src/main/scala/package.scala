@@ -9,5 +9,6 @@ package object config {
   val tiers = List(1, 2, 3, 4)
   val threads = 4
   val contentDistance = 15
+  val imageDistance = 1000
   val timeout = 1
 }
